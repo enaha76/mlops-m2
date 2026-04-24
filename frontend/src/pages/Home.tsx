@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ICONS } from '../constants';
+import { ICONS, API_BASE_URL } from '../constants';
 import { HealthResponse } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -22,7 +22,7 @@ export default function Home() {
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/health');
+      const res = await fetch(`${API_BASE_URL}/health`);
       const data = await res.json();
       setHealth(data);
       setLastChecked(new Date());
