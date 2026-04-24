@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ICONS } from '../constants';
+import { ICONS, API_BASE_URL } from '../constants';
 import { HealthResponse } from '../types';
 import { cn, formatDate } from '../lib/utils';
 import { useSettings } from '../hooks/useSettings';
@@ -16,7 +16,7 @@ export default function Status() {
   const fetchHealth = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/health');
+      const res = await fetch(`${API_BASE_URL}/health`);
       const data = await res.json();
       setHealth(data);
       setLastRefreshed(new Date());
@@ -32,7 +32,7 @@ export default function Status() {
     
     setReloading(true);
     try {
-      await fetch('/reload', { method: 'POST' });
+      await fetch(`${API_BASE_URL}/reload`, { method: 'POST' });
       await fetchHealth();
     } catch (e) {
       console.error(e);

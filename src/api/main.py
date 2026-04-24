@@ -3,9 +3,9 @@
 Loads the latest `Production` (or `Staging`) version of the registered model
 from MLflow at startup, exposes:
 
-  GET  /          — health check (spec C2)
-  GET  /ui        — minimal HTML form (spec C5)
-  POST /predict   — JSON body → prediction (spec C1)
+  GET  /          — health check
+  GET  /health    — health check alias (consumed by the React frontend)
+  POST /predict   — JSON body → prediction
   POST /reload    — force reload the model (used by Workflow 2 after retrain)
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ import mlflow.artifacts
 import mlflow.sklearn
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from mlflow.tracking import MlflowClient
 from pydantic import BaseModel, Field
 
@@ -88,6 +88,14 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Bank Marketing Predictor", version="1.0.0", lifespan=lifespan)
 
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
 
 class PredictRequest(BaseModel):
     age: int = Field(ge=18, le=100, examples=[41])
@@ -115,6 +123,7 @@ class PredictResponse(BaseModel):
 
 
 @app.get("/")
+@app.get("/health")
 def health() -> dict:
     loaded = _state["model"] is not None and _state["preprocessor"] is not None
     return {
@@ -152,6 +161,3 @@ def reload_model() -> dict:
     return {"status": "reloaded", "model_version": _state["version"]}
 
 
-@app.get("/ui")
-def ui() -> FileResponse:
-    return FileResponse(Path(__file__).parent / "static" / "index.html")

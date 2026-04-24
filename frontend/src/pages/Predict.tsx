@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ICONS, JOB_OPTIONS, MARITAL_OPTIONS, EDUCATION_OPTIONS, YES_NO_OPTIONS, CONTACT_OPTIONS, MONTH_OPTIONS, POUTCOME_OPTIONS } from '../constants';
+import { ICONS, JOB_OPTIONS, MARITAL_OPTIONS, EDUCATION_OPTIONS, YES_NO_OPTIONS, CONTACT_OPTIONS, MONTH_OPTIONS, POUTCOME_OPTIONS, API_BASE_URL } from '../constants';
 import { PredictRequest, PredictResponse } from '../types';
 import { cn, formatPercent } from '../lib/utils';
 
@@ -33,7 +33,7 @@ export default function Predict() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/predict', {
+      const res = await fetch(`${API_BASE_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

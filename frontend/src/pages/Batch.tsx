@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import Papa from 'papaparse';
-import { ICONS } from '../constants';
+import { ICONS, API_BASE_URL } from '../constants';
 import { PredictRequest, PredictResponse } from '../types';
 import { cn, formatPercent } from '../lib/utils';
 
@@ -53,7 +53,7 @@ export default function Batch() {
       setData([...rows]);
 
       try {
-        const res = await fetch('/predict', {
+        const res = await fetch(`${API_BASE_URL}/predict`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(rows[i])

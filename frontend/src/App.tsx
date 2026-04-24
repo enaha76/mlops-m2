@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ICONS } from './constants';
+import { ICONS, API_BASE_URL } from './constants';
 import { cn } from './lib/utils';
 import { useSettings } from './hooks/useSettings';
 import Home from './pages/Home';
@@ -38,7 +38,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    fetch('/health')
+    fetch(`${API_BASE_URL}/health`)
       .then(res => res.json())
       .then(data => setHealth(data))
       .catch(() => {});
