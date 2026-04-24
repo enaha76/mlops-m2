@@ -1,0 +1,83 @@
+# Workflow 2 — Data CI (spec section 2.4 / D4-D5).
+# Fires on:
+#   - manual trigger (workflow_dispatch)
+#   - weekly cron (Mondays 06:00 UTC)
+#   - push to a data/* branch (e.g. someone uploaded a new bank.csv.dvc pointer)
+# Re-runs the full DVC pipeline, registers the new model in MLflow, tells the
+# API container to reload it.
+name: retrain
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+  push:
+    branches: ["data/**"]
+    paths:
+      - "data/**.dvc"
+      - "params.example.yaml"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: retrain
+  cancel-in-progress: false
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Discover EC2 public IP
+        id: ec2
+        run: |
+          ip=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{ vars.PROJECT_NAME }}-ec2" \
+                      "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "ip=$ip" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Render params.yaml (secret-safe)
+        env:
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+          EC2_IP: ${{ steps.ec2.outputs.ip }}
+        run: |
+          cp params.example.yaml params.yaml
+          sed -i "s|CHANGE-ME-bucket-name|$S3_BUCKET|g" params.yaml
+          sed -i "s|MLFLOW_EC2_IP|$EC2_IP|g" params.yaml
+
+      - name: DVC reproduce pipeline
+        env:
+          MLFLOW_TRACKING_URI: http://${{ steps.ec2.outputs.ip }}:5000
+        run: |
+          dvc pull -q || echo "initial run — nothing to pull"
+          dvc repro
+          dvc push
+
+      - name: Ask API to reload the new model
+        run: |
+          curl -fsS -X POST "http://${{ steps.ec2.outputs.ip }}:8000/reload" || \
+            echo "Reload endpoint not reachable — deploy workflow will pick it up."
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: data/processed/metrics.json

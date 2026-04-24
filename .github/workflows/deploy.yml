@@ -1,0 +1,98 @@
+# Workflow 1 — Code CI/CD (spec section 2.4 / D1-D3).
+# Fires on merge to main. SSH to EC2, pull, rebuild image, restart, health check.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  id-token: write      # for AWS OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC — no access keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Discover EC2 public IP
+        id: ec2
+        run: |
+          ip=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{ vars.PROJECT_NAME }}-ec2" \
+                      "Name=instance-state-name,Values=running" \
+            --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "ip=$ip" >> "$GITHUB_OUTPUT"
+          echo "EC2 IP: $ip"
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ steps.ec2.outputs.ip }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull, build, restart on EC2
+        env:
+          IP: ${{ steps.ec2.outputs.ip }}
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+          # Short-lived token from the runner. Scoped to this repo, expires when the job ends.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@$IP bash -s <<EOF
+          set -euo pipefail
+          TOKEN_URL="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          CLEAN_URL="https://github.com/${REPO}.git"
+
+          if [ ! -d ~/app ]; then
+            git clone "\$TOKEN_URL" ~/app
+          fi
+          cd ~/app
+          git remote set-url origin "\$TOKEN_URL"
+          git fetch --all
+          git reset --hard origin/main
+          # Scrub the token from disk so it isn't left in .git/config.
+          git remote set-url origin "\$CLEAN_URL"
+
+          # DVC needs params.yaml — CI renders it from the example and sets the S3 URI.
+          cp params.example.yaml params.yaml
+          sed -i "s|CHANGE-ME-bucket-name|$S3_BUCKET|g" params.yaml
+          sed -i "s|MLFLOW_EC2_IP|127.0.0.1|g" params.yaml
+
+          docker build -f docker/Dockerfile -t bank-api:latest .
+          docker rm -f bank-api 2>/dev/null || true
+          docker run -d --name bank-api --restart unless-stopped \
+            -p 8000:8000 \
+            -e MLFLOW_TRACKING_URI=http://127.0.0.1:5000 \
+            -e MLFLOW_MODEL_NAME=bank-marketing-classifier \
+            -e MLFLOW_MODEL_STAGE=Production \
+            -e AWS_DEFAULT_REGION=${{ vars.AWS_REGION }} \
+            bank-api:latest
+          EOF
+
+      - name: Health check
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://${{ steps.ec2.outputs.ip }}:8000/" >/dev/null; then
+              echo "API healthy"
+              curl -s "http://${{ steps.ec2.outputs.ip }}:8000/"
+              exit 0
+            fi
+            echo "attempt $i — not ready yet"
+            sleep 5
+          done
+          echo "API did not become healthy in time"
+          exit 1

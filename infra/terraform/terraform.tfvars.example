@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+
+aws_region    = "eu-west-3"
+project_name  = "supnum-mlops-bank"
+instance_type = "t3.medium"
+
+# Your GitHub repo in "owner/name" form.
+# The OIDC trust policy is scoped to this repo so only your CI can assume the deploy role.
+github_repo = "enaha76/mlops-m2"
+
+# Optional: restrict SSH to your IP for better posture.
+# allowed_ssh_cidr = "203.0.113.42/32"

@@ -1,0 +1,33 @@
+# Copy this file to params.yaml (which is .gitignored per project spec).
+# These values are used by DVC stages and logged to MLflow.
+
+data:
+  s3_raw_uri: "s3://CHANGE-ME-bucket-name/data/raw/bank.csv"
+  target_column: "y"
+  test_size: 0.2
+  random_state: 42
+
+preprocess:
+  drop_duplicates: true
+  numeric_strategy: "median"
+  categorical_strategy: "most_frequent"
+
+train:
+  model_type: "xgboost"        # one of: logistic, random_forest, xgboost
+  n_estimators: 300
+  max_depth: 6
+  learning_rate: 0.1
+  random_state: 42
+
+evaluate:
+  metric_threshold:
+    f1: 0.55
+    roc_auc: 0.80
+
+register:
+  model_name: "bank-marketing-classifier"
+  promote_to: "Production"     # or "Staging"
+
+mlflow:
+  experiment_name: "bank-marketing"
+  tracking_uri: "http://MLFLOW_EC2_IP:5000"

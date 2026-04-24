@@ -1,0 +1,49 @@
+stages:
+  preprocess:
+    cmd: python -m src.pipeline.preprocess
+    deps:
+      - src/pipeline/preprocess.py
+      - src/pipeline/schema.py
+      - src/common/config.py
+      - data/raw/bank.csv
+    params:
+      - data
+      - preprocess
+    outs:
+      - data/processed/train.parquet
+      - data/processed/test.parquet
+      - data/processed/preprocessor.joblib
+
+  train:
+    cmd: python -m src.pipeline.train
+    deps:
+      - src/pipeline/train.py
+      - src/common/config.py
+      - data/processed/train.parquet
+    params:
+      - train
+      - mlflow
+    outs:
+      - data/processed/run_id.json
+
+  evaluate:
+    cmd: python -m src.pipeline.evaluate
+    deps:
+      - src/pipeline/evaluate.py
+      - src/common/config.py
+      - data/processed/test.parquet
+      - data/processed/run_id.json
+    metrics:
+      - data/processed/metrics.json:
+          cache: false
+
+  register:
+    cmd: python -m src.pipeline.register
+    deps:
+      - src/pipeline/register.py
+      - src/common/config.py
+      - data/processed/metrics.json
+      - data/processed/run_id.json
+    params:
+      - evaluate.metric_threshold
+      - register
