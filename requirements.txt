@@ -1,4 +1,6 @@
 mlflow==2.18.0
+# DVC 3.56 is incompatible with pathspec 1.x (_DIR_MARK removed); keep <1 until DVC pins upstream.
+pathspec>=0.10.3,<1
 dvc[s3]==3.56.0
 scikit-learn==1.5.2
 xgboost==2.1.2

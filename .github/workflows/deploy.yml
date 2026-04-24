@@ -37,11 +37,15 @@ jobs:
           echo "ip=$ip" >> "$GITHUB_OUTPUT"
           echo "EC2 IP: $ip"
 
+      # Multiline PEM via env avoids YAML/shell mangling that can trigger OpenSSL "error in libcrypto".
       - name: Setup SSH key
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s' "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -l -f ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.ec2.outputs.ip }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Pull, build, restart on EC2
@@ -74,9 +78,12 @@ jobs:
 
           docker build -f docker/Dockerfile -t bank-api:latest .
           docker rm -f bank-api 2>/dev/null || true
+          # MLflow runs on the EC2 host, not inside this container — 127.0.0.1 here is wrong.
+          # host.docker.internal → host loopback (Docker 20.10+ Linux: host-gateway).
           docker run -d --name bank-api --restart unless-stopped \
+            --add-host=host.docker.internal:host-gateway \
             -p 8000:8000 \
-            -e MLFLOW_TRACKING_URI=http://127.0.0.1:5000 \
+            -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 \
             -e MLFLOW_MODEL_NAME=bank-marketing-classifier \
             -e MLFLOW_MODEL_STAGE=Production \
             -e AWS_DEFAULT_REGION=${{ vars.AWS_REGION }} \
