@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REMOTE="git@github.com:enaha76/mlops-m2.git"
-BRANCHES=("staging" "dev-21076" "dev-21047" "dev-21012" "dev-24064")
+BRANCHES=("staging" "dev-21076" "dev-21047" "dev-21012" "dev-24265")
 
 if [ ! -d .git ]; then
   echo "==> git init"

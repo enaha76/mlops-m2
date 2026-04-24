@@ -16,7 +16,7 @@ Actions with AWS OIDC (no long-lived keys).
 | 21076     | `dev-21076`  |
 | 21047     | `dev-21047`  |
 | 21012     | `dev-21012`  |
-| 24064     | `dev-24064`  |
+| 24265     | `dev-24265`  |
 
 ## Services
 
