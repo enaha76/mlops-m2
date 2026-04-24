@@ -1,0 +1,6 @@
+{
+  "name": "Bank Marketing Predictor",
+  "description": "Professional term-deposit subscription prediction system with single and batch scoring, campaign worklists, and model monitoring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
