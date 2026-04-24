@@ -1,0 +1,4 @@
+[core]
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://supnum-mlops-bank-eab0c9/dvc-store
