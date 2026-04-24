@@ -1,0 +1,136 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -m src.pipeline.preprocess
+    deps:
+    - path: data/raw/bank.csv
+      hash: md5
+      md5: e6b0ca77f3f200ec5428e04dd104da53
+      size: 4610348
+    - path: src/common/config.py
+      hash: md5
+      md5: dcc491ea652b537b1bba833957d8637e
+      size: 777
+      isexec: true
+    - path: src/pipeline/preprocess.py
+      hash: md5
+      md5: 72b29312812d9e2e1bfabe0d52e751c3
+      size: 2794
+      isexec: true
+    - path: src/pipeline/schema.py
+      hash: md5
+      md5: bbbdc8bad148bda740dcbed4b938cda9
+      size: 626
+      isexec: true
+    params:
+      params.yaml:
+        data:
+          s3_raw_uri: s3://supnum-mlops-bank-eab0c9/data/raw/bank.csv
+          target_column: y
+          test_size: 0.2
+          random_state: 42
+        preprocess:
+          drop_duplicates: true
+          numeric_strategy: median
+          categorical_strategy: most_frequent
+    outs:
+    - path: data/processed/preprocessor.joblib
+      hash: md5
+      md5: 38e0b0e526b808131bf095b769d51d94
+      size: 5957
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 9d4396ad032bd07689cad081f0f3e393
+      size: 174792
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 550fafca7b8b74bc44074de5a963c0d6
+      size: 500298
+  train:
+    cmd: python -m src.pipeline.train
+    deps:
+    - path: data/processed/train.parquet
+      hash: md5
+      md5: 550fafca7b8b74bc44074de5a963c0d6
+      size: 500298
+    - path: src/common/config.py
+      hash: md5
+      md5: dcc491ea652b537b1bba833957d8637e
+      size: 777
+      isexec: true
+    - path: src/pipeline/train.py
+      hash: md5
+      md5: e9bd2874a4cbc999e0abb61eac34a43f
+      size: 2608
+      isexec: true
+    params:
+      params.yaml:
+        mlflow:
+          experiment_name: bank-marketing
+          tracking_uri: http://13.39.23.25:5000
+        train:
+          model_type: xgboost
+          n_estimators: 300
+          max_depth: 6
+          learning_rate: 0.1
+          random_state: 42
+    outs:
+    - path: data/processed/run_id.json
+      hash: md5
+      md5: 19e2e8da51cdb88dff956a08fe16a496
+      size: 46
+  evaluate:
+    cmd: python -m src.pipeline.evaluate
+    deps:
+    - path: data/processed/run_id.json
+      hash: md5
+      md5: 19e2e8da51cdb88dff956a08fe16a496
+      size: 46
+    - path: data/processed/test.parquet
+      hash: md5
+      md5: 9d4396ad032bd07689cad081f0f3e393
+      size: 174792
+    - path: src/common/config.py
+      hash: md5
+      md5: dcc491ea652b537b1bba833957d8637e
+      size: 777
+      isexec: true
+    - path: src/pipeline/evaluate.py
+      hash: md5
+      md5: 27df2024c75b8984c339fe7f5380009a
+      size: 1589
+      isexec: true
+    outs:
+    - path: data/processed/metrics.json
+      hash: md5
+      md5: 760472daba7efa2552ad7cec58e98153
+      size: 164
+  register:
+    cmd: python -m src.pipeline.register
+    deps:
+    - path: data/processed/metrics.json
+      hash: md5
+      md5: 760472daba7efa2552ad7cec58e98153
+      size: 164
+    - path: data/processed/run_id.json
+      hash: md5
+      md5: 19e2e8da51cdb88dff956a08fe16a496
+      size: 46
+    - path: src/common/config.py
+      hash: md5
+      md5: dcc491ea652b537b1bba833957d8637e
+      size: 777
+      isexec: true
+    - path: src/pipeline/register.py
+      hash: md5
+      md5: 360b4b5922512cec66f528d20d85c6a5
+      size: 1541
+      isexec: true
+    params:
+      params.yaml:
+        evaluate.metric_threshold:
+          f1: 0.55
+          roc_auc: 0.8
+        register:
+          model_name: bank-marketing-classifier
+          promote_to: Production
