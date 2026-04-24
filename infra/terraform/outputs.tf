@@ -42,3 +42,13 @@ output "ssh_command" {
   description = "How the infra owner SSHes in after apply."
   value       = "ssh -i infra/terraform/.generated/id_rsa ubuntu@${aws_instance.main.public_ip}"
 }
+
+output "frontend_url" {
+  description = "React SPA URL served from S3. Available after CI uploads the build."
+  value       = "http://${aws_s3_bucket_website_configuration.frontend.website_endpoint}"
+}
+
+output "frontend_bucket" {
+  description = "Frontend S3 bucket name. Add to GitHub repo variables as FRONTEND_BUCKET."
+  value       = aws_s3_bucket.frontend.bucket
+}
