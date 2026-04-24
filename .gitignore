@@ -21,7 +21,12 @@ infra/terraform/crash.log
 infra/terraform/crash.*.log
 
 # --- DVC ---
-/data
+# Exclude raw/processed data binaries, but KEEP:
+#   - *.dvc pointer files (grille B1 requires them in git)
+#   - .gitignore files DVC auto-places inside data/
+/data/**
+!/data/**/*.dvc
+!/data/**/.gitignore
 .dvc/tmp
 .dvc/cache
 .dvc/plots
@@ -59,3 +64,7 @@ Thumbs.db
 dist/
 build/
 *.log
+
+# --- Course reference (professor's spec, not a deliverable) ---
+projet_final_mlops.pdf
+*.pdf

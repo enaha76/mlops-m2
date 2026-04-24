@@ -1,0 +1,64 @@
+# Docker reads this from the BUILD CONTEXT ROOT (repo root, because deploy.yml
+# runs `docker build -f docker/Dockerfile .`). Keep the image minimal: only
+# src/ and requirements.txt end up in the final layer.
+
+# --- VCS / CI ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Docs / non-code ---
+README.md
+docs
+projet_final_mlops.pdf
+*.md
+
+# --- Infra (not needed in the API image) ---
+infra
+scripts
+.pre-commit-config.yaml
+
+# --- Python dev artifacts ---
+.venv
+venv
+env
+__pycache__
+**/__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# --- DVC / MLflow local state (should never reach the image) ---
+.dvc
+mlruns
+mlartifacts
+mlflow.db
+dvc.lock
+
+# --- Data (the API pulls preprocessor from MLflow — data/ is not needed) ---
+data
+
+# --- Secrets / local config ---
+.env
+.env.*
+params.yaml
+*.pem
+*.key
+*_rsa
+*_rsa.pub
+
+# --- IDE / OS ---
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# --- Build artifacts ---
+dist
+build
+*.log
