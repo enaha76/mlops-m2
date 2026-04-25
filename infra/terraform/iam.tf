@@ -107,7 +107,9 @@ resource "aws_iam_role_policy" "github_deploy" {
         ]
         Resource = [
           aws_s3_bucket.main.arn,
-          "${aws_s3_bucket.main.arn}/*"
+          "${aws_s3_bucket.main.arn}/*",
+          aws_s3_bucket.frontend.arn,
+          "${aws_s3_bucket.frontend.arn}/*"
         ]
       },
       {
