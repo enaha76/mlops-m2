@@ -14,7 +14,7 @@ preprocess:
 
 train:
   model_type: "xgboost"        # one of: logistic, random_forest, xgboost
-  n_estimators: 300
+  n_estimators: 200
   max_depth: 6
   learning_rate: 0.1
   random_state: 42

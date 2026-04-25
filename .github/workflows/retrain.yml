@@ -63,6 +63,13 @@ jobs:
           sed -i "s|CHANGE-ME-bucket-name|$S3_BUCKET|g" params.yaml
           sed -i "s|MLFLOW_EC2_IP|$EC2_IP|g" params.yaml
 
+      - name: Download raw dataset from S3
+        env:
+          S3_BUCKET: ${{ vars.S3_BUCKET }}
+        run: |
+          mkdir -p data/raw
+          aws s3 cp s3://$S3_BUCKET/data/raw/bank.csv data/raw/bank.csv
+
       - name: DVC reproduce pipeline
         env:
           MLFLOW_TRACKING_URI: http://${{ steps.ec2.outputs.ip }}:5000
