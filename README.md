@@ -1,4 +1,4 @@
-# Bank Marketing MLOps Pipeline
+# Bank Marketing MLOps Pipeline 
 
 > **Course:** MLOps II — Institut Supérieur du Numérique (SupNum), DEML M2
 > **Professor:** Yehdhih ANNA
