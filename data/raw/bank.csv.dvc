@@ -1,0 +1,13 @@
+md5: 887a6a28cbcf7fead5d0dff8d6d954c4
+frozen: true
+deps:
+- etag: e6b0ca77f3f200ec5428e04dd104da53
+  size: 4610348
+  version_id: AhS3PHotEEun7K80B1vmmQWPXTf2BeyF
+  hash: md5
+  path: s3://supnum-mlops-bank-eab0c9/data/raw/bank.csv
+outs:
+- md5: e6b0ca77f3f200ec5428e04dd104da53
+  size: 4610348
+  hash: md5
+  path: bank.csv
